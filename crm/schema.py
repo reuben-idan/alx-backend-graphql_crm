@@ -1,24 +1,32 @@
 # crm/schema.py
 import graphene
 from graphene_django import DjangoObjectType
+from graphene_django.filter import DjangoFilterConnectionField
 from .models import Customer, Product, Order
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 import re
+from .filters import CustomerFilter, ProductFilter, OrderFilter
 
 # === Types ===
 class CustomerType(DjangoObjectType):
     class Meta:
         model = Customer
+        filterset_class = CustomerFilter
+        interfaces = (graphene.relay.Node,)
 
 class ProductType(DjangoObjectType):
     class Meta:
         model = Product
+        filterset_class = ProductFilter
+        interfaces = (graphene.relay.Node,)
 
 class OrderType(DjangoObjectType):
     class Meta:
         model = Order
+        filterset_class = OrderFilter
+        interfaces = (graphene.relay.Node,)
 
 # === Mutations ===
 class CreateCustomer(graphene.Mutation):
@@ -118,9 +126,13 @@ class CreateOrder(graphene.Mutation):
 
 # === Schema Root ===
 class Query(graphene.ObjectType):
-    all_customers = graphene.List(CustomerType)
-    all_products = graphene.List(ProductType)
-    all_orders = graphene.List(OrderType)
+    # ALX Required field
+    hello = graphene.String(default_value="Hello, GraphQL!")
+    
+    # CRM functionality
+    all_customers = DjangoFilterConnectionField(CustomerType)
+    all_products = DjangoFilterConnectionField(ProductType)
+    all_orders = DjangoFilterConnectionField(OrderType)
 
     def resolve_all_customers(self, info):
         return Customer.objects.all()
