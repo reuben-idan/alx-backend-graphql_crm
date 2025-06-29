@@ -33,16 +33,15 @@ class ProductFilter(FilterSet):
         model = Product
         fields = {
             'name': ['icontains', 'exact'],
-            'sku': ['icontains', 'exact'],
             'price': ['gte', 'lte', 'exact'],
-            'stock_quantity': ['gte', 'lte', 'exact'],
+            'stock': ['gte', 'lte', 'exact'],
         }
     
     order_by = OrderingFilter(
         fields=(
             ('name', 'name'),
             ('price', 'price'),
-            ('stock_quantity', 'stock_quantity'),
+            ('stock', 'stock'),
             ('created_at', 'created_at'),
         )
     )
@@ -52,7 +51,6 @@ class OrderFilter(FilterSet):
     class Meta:
         model = Order
         fields = {
-            'status': ['exact'],
             'customer__id': ['exact'],
             'order_date': ['gte', 'lte', 'exact'],
         }
@@ -60,7 +58,6 @@ class OrderFilter(FilterSet):
     order_by = OrderingFilter(
         fields=(
             ('order_date', 'order_date'),
-            ('status', 'status'),
             ('created_at', 'created_at'),
         )
     )
