@@ -1,140 +1,41 @@
-#!/usr/bin/env python
+# seed_db.py
 import os
 import django
-from decimal import Decimal
 
-# Setup Django environment
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'graphql_crm.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'alx_backend_graphql_crm.settings')
 django.setup()
 
-from crm.models import Customer, Product, Order, OrderItem
+from crm.models import Customer, Product, Order
+from django.utils import timezone
+from decimal import Decimal
 
-def seed_database():
-    print("Seeding database...")
-    
-    # Clear existing data
-    OrderItem.objects.all().delete()
-    Order.objects.all().delete()
-    Product.objects.all().delete()
-    Customer.objects.all().delete()
-    
-    # Create customers
-    customers = [
-        Customer.objects.create(
-            name="Alice Johnson",
-            email="alice@example.com",
-            phone="+1234567890"
-        ),
-        Customer.objects.create(
-            name="Bob Smith",
-            email="bob@example.com",
-            phone="123-456-7890"
-        ),
-        Customer.objects.create(
-            name="Carol Davis",
-            email="carol@example.com",
-            phone="+1987654321"
-        ),
-        Customer.objects.create(
-            name="David Wilson",
-            email="david@example.com"
-        ),
-    ]
-    
-    # Create products
-    products = [
-        Product.objects.create(
-            name="Laptop",
-            price=Decimal('999.99'),
-            stock=10
-        ),
-        Product.objects.create(
-            name="Smartphone",
-            price=Decimal('599.99'),
-            stock=25
-        ),
-        Product.objects.create(
-            name="Headphones",
-            price=Decimal('99.99'),
-            stock=50
-        ),
-        Product.objects.create(
-            name="Tablet",
-            price=Decimal('399.99'),
-            stock=5
-        ),
-        Product.objects.create(
-            name="Mouse",
-            price=Decimal('29.99'),
-            stock=100
-        ),
-    ]
-    
-    # Create orders
-    orders = [
-        Order.objects.create(
-            customer=customers[0],
-            total_amount=Decimal('1099.98')
-        ),
-        Order.objects.create(
-            customer=customers[1],
-            total_amount=Decimal('699.98')
-        ),
-        Order.objects.create(
-            customer=customers[2],
-            total_amount=Decimal('129.98')
-        ),
-    ]
-    
-    # Create order items
-    OrderItem.objects.create(
-        order=orders[0],
-        product=products[0],  # Laptop
-        quantity=1,
-        price=Decimal('999.99')
-    )
-    OrderItem.objects.create(
-        order=orders[0],
-        product=products[2],  # Headphones
-        quantity=1,
-        price=Decimal('99.99')
-    )
-    
-    OrderItem.objects.create(
-        order=orders[1],
-        product=products[1],  # Smartphone
-        quantity=1,
-        price=Decimal('599.99')
-    )
-    OrderItem.objects.create(
-        order=orders[1],
-        product=products[4],  # Mouse
-        quantity=1,
-        price=Decimal('29.99')
-    )
-    
-    OrderItem.objects.create(
-        order=orders[2],
-        product=products[2],  # Headphones
-        quantity=1,
-        price=Decimal('99.99')
-    )
-    OrderItem.objects.create(
-        order=orders[2],
-        product=products[4],  # Mouse
-        quantity=1,
-        price=Decimal('29.99')
-    )
-    
-    # Associate products with orders
-    orders[0].products.add(products[0], products[2])
-    orders[1].products.add(products[1], products[4])
-    orders[2].products.add(products[2], products[4])
-    
-    print(f"Created {len(customers)} customers")
-    print(f"Created {len(products)} products")
-    print(f"Created {len(orders)} orders")
-    print("Database seeded successfully!")
+# Clear existing data
+Order.objects.all().delete()
+Customer.objects.all().delete()
+Product.objects.all().delete()
 
-if __name__ == '__main__':
-    seed_database() 
+# Create customers
+customers = [
+    Customer(name="Alice", email="alice@example.com", phone="+1234567890"),
+    Customer(name="Bob", email="bob@example.com", phone="123-456-7890"),
+    Customer(name="Carol", email="carol@example.com")
+]
+Customer.objects.bulk_create(customers)
+
+# Create products
+products = [
+    Product(name="Laptop", price=Decimal('999.99'), stock=10),
+    Product(name="Smartphone", price=Decimal('499.99'), stock=20),
+    Product(name="Headphones", price=Decimal('149.99'), stock=50)
+]
+Product.objects.bulk_create(products)
+
+# Create a sample order
+order = Order.objects.create(
+    customer=Customer.objects.get(email="alice@example.com"),
+    total_amount=Decimal('1149.98'),
+    order_date=timezone.now()
+)
+order.products.set(Product.objects.filter(name__in=["Laptop", "Headphones"]))
+
+print("✅ Database seeded successfully.")
