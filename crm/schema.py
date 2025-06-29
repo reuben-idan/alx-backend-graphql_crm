@@ -7,60 +7,7 @@ from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from .models import Customer, Product, Order, OrderItem
-
-
-# Filter Classes
-class CustomerFilter(FilterSet):
-    class Meta:
-        model = Customer
-        fields = {
-            'name': ['icontains', 'exact'],
-            'email': ['icontains', 'exact'],
-            'phone': ['icontains', 'exact'],
-        }
-    
-    order_by = OrderingFilter(
-        fields=(
-            ('name', 'name'),
-            ('email', 'email'),
-            ('created_at', 'created_at'),
-        )
-    )
-
-
-class ProductFilter(FilterSet):
-    class Meta:
-        model = Product
-        fields = {
-            'name': ['icontains', 'exact'],
-            'price': ['gte', 'lte', 'exact'],
-            'stock': ['gte', 'lte', 'exact'],
-        }
-    
-    order_by = OrderingFilter(
-        fields=(
-            ('name', 'name'),
-            ('price', 'price'),
-            ('stock', 'stock'),
-            ('created_at', 'created_at'),
-        )
-    )
-
-
-class OrderFilter(FilterSet):
-    class Meta:
-        model = Order
-        fields = {
-            'customer__id': ['exact'],
-            'order_date': ['gte', 'lte', 'exact'],
-        }
-    
-    order_by = OrderingFilter(
-        fields=(
-            ('order_date', 'order_date'),
-            ('created_at', 'created_at'),
-        )
-    )
+from .filters import CustomerFilter, ProductFilter, OrderFilter
 
 
 # GraphQL Types
@@ -95,7 +42,43 @@ class OrderType(DjangoObjectType):
         filterset_class = OrderFilter
 
 
-# Input Types
+# Input Types for Filtering
+class CustomerFilterInput(graphene.InputObjectType):
+    name = graphene.String()
+    name_icontains = graphene.String()
+    email = graphene.String()
+    email_icontains = graphene.String()
+    phone = graphene.String()
+    phone_icontains = graphene.String()
+    phone_pattern = graphene.String()
+    created_at_gte = graphene.DateTime()
+    created_at_lte = graphene.DateTime()
+    order_by = graphene.String()
+
+
+class ProductFilterInput(graphene.InputObjectType):
+    name = graphene.String()
+    name_icontains = graphene.String()
+    price_gte = graphene.Decimal()
+    price_lte = graphene.Decimal()
+    stock_gte = graphene.Int()
+    stock_lte = graphene.Int()
+    low_stock = graphene.Boolean()
+    order_by = graphene.String()
+
+
+class OrderFilterInput(graphene.InputObjectType):
+    total_amount_gte = graphene.Decimal()
+    total_amount_lte = graphene.Decimal()
+    order_date_gte = graphene.DateTime()
+    order_date_lte = graphene.DateTime()
+    customer_name = graphene.String()
+    product_name = graphene.String()
+    product_id = graphene.String()
+    order_by = graphene.String()
+
+
+# Input Types for Mutations
 class CreateCustomerInput(graphene.InputObjectType):
     name = graphene.String(required=True)
     email = graphene.String(required=True)
@@ -120,43 +103,6 @@ class CreateOrderInput(graphene.InputObjectType):
     order_date = graphene.DateTime()
 
 
-class UpdateCustomerInput(graphene.InputObjectType):
-    id = graphene.ID(required=True)
-    name = graphene.String()
-    email = graphene.String()
-    phone = graphene.String()
-    address = graphene.String()
-
-
-class UpdateProductInput(graphene.InputObjectType):
-    id = graphene.ID(required=True)
-    name = graphene.String()
-    description = graphene.String()
-    price = graphene.Decimal()
-    stock_quantity = graphene.Int()
-    sku = graphene.String()
-
-
-class UpdateOrderInput(graphene.InputObjectType):
-    id = graphene.ID(required=True)
-    status = graphene.String()
-    shipping_address = graphene.String()
-    notes = graphene.String()
-
-
-class CreateOrderItemInput(graphene.InputObjectType):
-    order_id = graphene.ID(required=True)
-    product_id = graphene.ID(required=True)
-    quantity = graphene.Int(required=True)
-    unit_price = graphene.Decimal()
-
-
-class UpdateOrderItemInput(graphene.InputObjectType):
-    id = graphene.ID(required=True)
-    quantity = graphene.Int()
-    unit_price = graphene.Decimal()
-
-
 # Payload Types
 class CreateCustomerPayload(graphene.ObjectType):
     customer = graphene.Field(CustomerType)
@@ -176,60 +122,10 @@ class CreateProductPayload(graphene.ObjectType):
     message = graphene.String()
 
 
-class UpdateCustomerPayload(graphene.ObjectType):
-    customer = graphene.Field(CustomerType)
-    success = graphene.Boolean()
-    errors = graphene.List(graphene.String)
-
-
-class DeleteCustomerPayload(graphene.ObjectType):
-    success = graphene.Boolean()
-    errors = graphene.List(graphene.String)
-
-
-class UpdateProductPayload(graphene.ObjectType):
-    product = graphene.Field(ProductType)
-    success = graphene.Boolean()
-    errors = graphene.List(graphene.String)
-
-
-class DeleteProductPayload(graphene.ObjectType):
-    success = graphene.Boolean()
-    errors = graphene.List(graphene.String)
-
-
 class CreateOrderPayload(graphene.ObjectType):
     order = graphene.Field(OrderType)
     success = graphene.Boolean()
     message = graphene.String()
-
-
-class UpdateOrderPayload(graphene.ObjectType):
-    order = graphene.Field(OrderType)
-    success = graphene.Boolean()
-    errors = graphene.List(graphene.String)
-
-
-class DeleteOrderPayload(graphene.ObjectType):
-    success = graphene.Boolean()
-    errors = graphene.List(graphene.String)
-
-
-class CreateOrderItemPayload(graphene.ObjectType):
-    order_item = graphene.Field(OrderItemType)
-    success = graphene.Boolean()
-    errors = graphene.List(graphene.String)
-
-
-class UpdateOrderItemPayload(graphene.ObjectType):
-    order_item = graphene.Field(OrderItemType)
-    success = graphene.Boolean()
-    errors = graphene.List(graphene.String)
-
-
-class DeleteOrderItemPayload(graphene.ObjectType):
-    success = graphene.Boolean()
-    errors = graphene.List(graphene.String)
 
 
 # Mutations
@@ -323,50 +219,6 @@ class BulkCreateCustomers(graphene.Mutation):
         )
 
 
-class UpdateCustomer(graphene.Mutation):
-    class Arguments:
-        input = UpdateCustomerInput(required=True)
-    
-    Output = UpdateCustomerPayload
-    
-    def mutate(self, info, input):
-        try:
-            customer = Customer.objects.get(id=input.id)
-            
-            if input.name is not None:
-                customer.name = input.name
-            if input.email is not None:
-                customer.email = input.email
-            if input.phone is not None:
-                customer.phone = input.phone
-            if input.address is not None:
-                customer.address = input.address
-            
-            customer.save()
-            return UpdateCustomerPayload(customer=customer, success=True, errors=[])
-        except Customer.DoesNotExist:
-            return UpdateCustomerPayload(customer=None, success=False, errors=["Customer not found"])
-        except Exception as e:
-            return UpdateCustomerPayload(customer=None, success=False, errors=[str(e)])
-
-
-class DeleteCustomer(graphene.Mutation):
-    class Arguments:
-        input = graphene.ID(required=True)
-    
-    Output = DeleteCustomerPayload
-    
-    def mutate(self, info, input):
-        try:
-            customer = Customer.objects.get(id=input)
-            customer.delete()
-            return DeleteCustomerPayload(success=True, errors=[])
-        except Customer.DoesNotExist:
-            return DeleteCustomerPayload(success=False, errors=["Customer not found"])
-        except Exception as e:
-            return DeleteCustomerPayload(success=False, errors=[str(e)])
-
-
 class CreateProduct(graphene.Mutation):
     class Arguments:
         input = CreateProductInput(required=True)
@@ -410,52 +262,6 @@ class CreateProduct(graphene.Mutation):
                 message=f"Error creating product: {str(e)}",
                 success=False
             )
-
-
-class UpdateProduct(graphene.Mutation):
-    class Arguments:
-        input = UpdateProductInput(required=True)
-    
-    Output = UpdateProductPayload
-    
-    def mutate(self, info, input):
-        try:
-            product = Product.objects.get(id=input.id)
-            
-            if input.name is not None:
-                product.name = input.name
-            if input.description is not None:
-                product.description = input.description
-            if input.price is not None:
-                product.price = input.price
-            if input.stock_quantity is not None:
-                product.stock_quantity = input.stock_quantity
-            if input.sku is not None:
-                product.sku = input.sku
-            
-            product.save()
-            return UpdateProductPayload(product=product, success=True, errors=[])
-        except Product.DoesNotExist:
-            return UpdateProductPayload(product=None, success=False, errors=["Product not found"])
-        except Exception as e:
-            return UpdateProductPayload(product=None, success=False, errors=[str(e)])
-
-
-class DeleteProduct(graphene.Mutation):
-    class Arguments:
-        input = graphene.ID(required=True)
-    
-    Output = DeleteProductPayload
-    
-    def mutate(self, info, input):
-        try:
-            product = Product.objects.get(id=input)
-            product.delete()
-            return DeleteProductPayload(success=True, errors=[])
-        except Product.DoesNotExist:
-            return DeleteProductPayload(success=False, errors=["Product not found"])
-        except Exception as e:
-            return DeleteProductPayload(success=False, errors=[str(e)])
 
 
 class CreateOrder(graphene.Mutation):
@@ -531,132 +337,45 @@ class CreateOrder(graphene.Mutation):
             )
 
 
-class UpdateOrder(graphene.Mutation):
-    class Arguments:
-        input = UpdateOrderInput(required=True)
-    
-    Output = UpdateOrderPayload
-    
-    def mutate(self, info, input):
-        try:
-            order = Order.objects.get(id=input.id)
-            
-            if input.status is not None:
-                order.status = input.status
-            if input.shipping_address is not None:
-                order.shipping_address = input.shipping_address
-            if input.notes is not None:
-                order.notes = input.notes
-            
-            order.save()
-            return UpdateOrderPayload(order=order, success=True, errors=[])
-        except Order.DoesNotExist:
-            return UpdateOrderPayload(order=None, success=False, errors=["Order not found"])
-        except Exception as e:
-            return UpdateOrderPayload(order=None, success=False, errors=[str(e)])
-
-
-class DeleteOrder(graphene.Mutation):
-    class Arguments:
-        input = graphene.ID(required=True)
-    
-    Output = DeleteOrderPayload
-    
-    def mutate(self, info, input):
-        try:
-            order = Order.objects.get(id=input)
-            order.delete()
-            return DeleteOrderPayload(success=True, errors=[])
-        except Order.DoesNotExist:
-            return DeleteOrderPayload(success=False, errors=["Order not found"])
-        except Exception as e:
-            return DeleteOrderPayload(success=False, errors=[str(e)])
-
-
-class CreateOrderItem(graphene.Mutation):
-    class Arguments:
-        input = CreateOrderItemInput(required=True)
-    
-    Output = CreateOrderItemPayload
-    
-    def mutate(self, info, input):
-        try:
-            order = Order.objects.get(id=input.order_id)
-            product = Product.objects.get(id=input.product_id)
-            
-            order_item = OrderItem.objects.create(
-                order=order,
-                product=product,
-                quantity=input.quantity,
-                unit_price=input.unit_price or product.price
-            )
-            return CreateOrderItemPayload(order_item=order_item, success=True, errors=[])
-        except (Order.DoesNotExist, Product.DoesNotExist) as e:
-            return CreateOrderItemPayload(order_item=None, success=False, errors=[str(e)])
-        except Exception as e:
-            return CreateOrderItemPayload(order_item=None, success=False, errors=[str(e)])
-
-
-class UpdateOrderItem(graphene.Mutation):
-    class Arguments:
-        input = UpdateOrderItemInput(required=True)
-    
-    Output = UpdateOrderItemPayload
-    
-    def mutate(self, info, input):
-        try:
-            order_item = OrderItem.objects.get(id=input.id)
-            
-            if input.quantity is not None:
-                order_item.quantity = input.quantity
-            if input.unit_price is not None:
-                order_item.unit_price = input.unit_price
-            
-            order_item.save()
-            return UpdateOrderItemPayload(order_item=order_item, success=True, errors=[])
-        except OrderItem.DoesNotExist:
-            return UpdateOrderItemPayload(order_item=None, success=False, errors=["Order item not found"])
-        except Exception as e:
-            return UpdateOrderItemPayload(order_item=None, success=False, errors=[str(e)])
-
-
-class DeleteOrderItem(graphene.Mutation):
-    class Arguments:
-        input = graphene.ID(required=True)
-    
-    Output = DeleteOrderItemPayload
-    
-    def mutate(self, info, input):
-        try:
-            order_item = OrderItem.objects.get(id=input)
-            order_item.delete()
-            return DeleteOrderItemPayload(success=True, errors=[])
-        except OrderItem.DoesNotExist:
-            return DeleteOrderItemPayload(success=False, errors=["Order item not found"])
-        except Exception as e:
-            return DeleteOrderItemPayload(success=False, errors=[str(e)])
-
-
 # Query Class
 class Query(graphene.ObjectType):
-    # Customer queries
+    # Basic queries
+    customers = graphene.List(CustomerType)
+    products = graphene.List(ProductType)
+    orders = graphene.List(OrderType)
     customer = graphene.Field(CustomerType, id=graphene.ID(required=True))
-    customers = DjangoFilterConnectionField(CustomerType)
-    
-    # Product queries
     product = graphene.Field(ProductType, id=graphene.ID(required=True))
-    products = DjangoFilterConnectionField(ProductType)
-    
-    # Order queries
     order = graphene.Field(OrderType, id=graphene.ID(required=True))
-    orders = DjangoFilterConnectionField(OrderType)
     
-    # Order item queries
-    order_item = graphene.Field(OrderItemType, id=graphene.ID(required=True))
+    # Filtered queries with Relay connections
+    all_customers = DjangoFilterConnectionField(CustomerType)
+    all_products = DjangoFilterConnectionField(ProductType)
+    all_orders = DjangoFilterConnectionField(OrderType)
     
-    # Search queries
-    search_customers = graphene.List(CustomerType, query=graphene.String(required=True))
-    search_products = graphene.List(ProductType, query=graphene.String(required=True))
+    # Custom filtered queries
+    filtered_customers = graphene.List(
+        CustomerType,
+        filter=graphene.Argument(CustomerFilterInput)
+    )
+    
+    filtered_products = graphene.List(
+        ProductType,
+        filter=graphene.Argument(ProductFilterInput)
+    )
+    
+    filtered_orders = graphene.List(
+        OrderType,
+        filter=graphene.Argument(OrderFilterInput)
+    )
+    
+    def resolve_customers(self, info):
+        return Customer.objects.all()
+    
+    def resolve_products(self, info):
+        return Product.objects.all()
+    
+    def resolve_orders(self, info):
+        return Order.objects.all()
     
     def resolve_customer(self, info, id):
         try:
@@ -676,50 +395,83 @@ class Query(graphene.ObjectType):
         except Order.DoesNotExist:
             return None
     
-    def resolve_order_item(self, info, id):
-        try:
-            return OrderItem.objects.get(id=id)
-        except OrderItem.DoesNotExist:
-            return None
+    def resolve_filtered_customers(self, info, filter=None):
+        queryset = Customer.objects.all()
+        
+        if filter:
+            if filter.name:
+                queryset = queryset.filter(name__icontains=filter.name)
+            if filter.name_icontains:
+                queryset = queryset.filter(name__icontains=filter.name_icontains)
+            if filter.email:
+                queryset = queryset.filter(email__icontains=filter.email)
+            if filter.email_icontains:
+                queryset = queryset.filter(email__icontains=filter.email_icontains)
+            if filter.phone:
+                queryset = queryset.filter(phone__icontains=filter.phone)
+            if filter.phone_icontains:
+                queryset = queryset.filter(phone__icontains=filter.phone_icontains)
+            if filter.phone_pattern:
+                queryset = queryset.filter(phone__startswith=filter.phone_pattern)
+            if filter.created_at_gte:
+                queryset = queryset.filter(created_at__gte=filter.created_at_gte)
+            if filter.created_at_lte:
+                queryset = queryset.filter(created_at__lte=filter.created_at_lte)
+            if filter.order_by:
+                queryset = queryset.order_by(filter.order_by)
+        
+        return queryset
     
-    def resolve_search_customers(self, info, query):
-        return Customer.objects.filter(
-            Q(name__icontains=query) | 
-            Q(email__icontains=query) | 
-            Q(phone__icontains=query)
-        )
+    def resolve_filtered_products(self, info, filter=None):
+        queryset = Product.objects.all()
+        
+        if filter:
+            if filter.name:
+                queryset = queryset.filter(name__icontains=filter.name)
+            if filter.name_icontains:
+                queryset = queryset.filter(name__icontains=filter.name_icontains)
+            if filter.price_gte:
+                queryset = queryset.filter(price__gte=filter.price_gte)
+            if filter.price_lte:
+                queryset = queryset.filter(price__lte=filter.price_lte)
+            if filter.stock_gte:
+                queryset = queryset.filter(stock__gte=filter.stock_gte)
+            if filter.stock_lte:
+                queryset = queryset.filter(stock__lte=filter.stock_lte)
+            if filter.low_stock:
+                queryset = queryset.filter(stock__lt=10)
+            if filter.order_by:
+                queryset = queryset.order_by(filter.order_by)
+        
+        return queryset
     
-    def resolve_search_products(self, info, query):
-        return Product.objects.filter(
-            Q(name__icontains=query) | 
-            Q(description__icontains=query) | 
-            Q(sku__icontains=query)
-        )
+    def resolve_filtered_orders(self, info, filter=None):
+        queryset = Order.objects.all()
+        
+        if filter:
+            if filter.total_amount_gte:
+                queryset = queryset.filter(total_amount__gte=filter.total_amount_gte)
+            if filter.total_amount_lte:
+                queryset = queryset.filter(total_amount__lte=filter.total_amount_lte)
+            if filter.order_date_gte:
+                queryset = queryset.filter(order_date__gte=filter.order_date_gte)
+            if filter.order_date_lte:
+                queryset = queryset.filter(order_date__lte=filter.order_date_lte)
+            if filter.customer_name:
+                queryset = queryset.filter(customer__name__icontains=filter.customer_name)
+            if filter.product_name:
+                queryset = queryset.filter(items__product__name__icontains=filter.product_name).distinct()
+            if filter.product_id:
+                queryset = queryset.filter(items__product__id=filter.product_id).distinct()
+            if filter.order_by:
+                queryset = queryset.order_by(filter.order_by)
+        
+        return queryset
 
 
 # Mutation Class
 class Mutation(graphene.ObjectType):
-    # Customer mutations
     create_customer = CreateCustomer.Field()
     bulk_create_customers = BulkCreateCustomers.Field()
-    update_customer = UpdateCustomer.Field()
-    delete_customer = DeleteCustomer.Field()
-    
-    # Product mutations
     create_product = CreateProduct.Field()
-    update_product = UpdateProduct.Field()
-    delete_product = DeleteProduct.Field()
-    
-    # Order mutations
-    create_order = CreateOrder.Field()
-    update_order = UpdateOrder.Field()
-    delete_order = DeleteOrder.Field()
-    
-    # Order item mutations
-    create_order_item = CreateOrderItem.Field()
-    update_order_item = UpdateOrderItem.Field()
-    delete_order_item = DeleteOrderItem.Field()
-
-
-# Schema
-schema = graphene.Schema(query=Query, mutation=Mutation) 
+    create_order = CreateOrder.Field() 
