@@ -1,5 +1,5 @@
 """
-ASGI config for graphql_crm project.
+ASGI config for crm_project project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 
@@ -11,6 +11,6 @@ import os
 
 from django.core.asgi import get_asgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'graphql_crm.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'crm_project.settings')
 
-application = get_asgi_application()
+application = get_asgi_application() 
