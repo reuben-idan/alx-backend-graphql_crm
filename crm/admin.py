@@ -4,18 +4,15 @@ from .models import Customer, Product, Order, OrderItem
 
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
-    list_display = ['name', 'email', 'phone', 'total_orders', 'total_spent', 'created_at']
+    list_display = ['name', 'email', 'phone', 'created_at']
     list_filter = ['created_at']
     search_fields = ['name', 'email', 'phone']
-    readonly_fields = ['id', 'created_at', 'updated_at', 'total_orders', 'total_spent']
+    readonly_fields = ['id', 'created_at', 'updated_at']
     ordering = ['-created_at']
     
     fieldsets = (
         ('Basic Information', {
             'fields': ('name', 'email', 'phone')
-        }),
-        ('Address', {
-            'fields': ('address',)
         }),
         ('System Information', {
             'fields': ('id', 'created_at', 'updated_at'),
@@ -26,18 +23,18 @@ class CustomerAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ['name', 'sku', 'price', 'stock_quantity', 'is_in_stock', 'created_at']
-    list_filter = ['created_at', 'is_in_stock']
-    search_fields = ['name', 'sku', 'description']
-    readonly_fields = ['id', 'created_at', 'updated_at', 'is_in_stock']
+    list_display = ['name', 'price', 'stock', 'created_at']
+    list_filter = ['created_at']
+    search_fields = ['name']
+    readonly_fields = ['id', 'created_at', 'updated_at']
     ordering = ['name']
     
     fieldsets = (
         ('Product Information', {
-            'fields': ('name', 'description', 'sku')
+            'fields': ('name',)
         }),
         ('Pricing & Stock', {
-            'fields': ('price', 'stock_quantity')
+            'fields': ('price', 'stock')
         }),
         ('System Information', {
             'fields': ('id', 'created_at', 'updated_at'),
@@ -49,27 +46,24 @@ class ProductAdmin(admin.ModelAdmin):
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
     extra = 1
-    readonly_fields = ['subtotal']
+    readonly_fields = []
 
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ['id', 'customer', 'status', 'total_amount', 'item_count', 'order_date']
-    list_filter = ['status', 'order_date', 'created_at']
+    list_display = ['id', 'customer', 'total_amount', 'order_date']
+    list_filter = ['order_date', 'created_at']
     search_fields = ['customer__name', 'customer__email', 'id']
-    readonly_fields = ['id', 'created_at', 'updated_at', 'total_amount', 'item_count']
+    readonly_fields = ['id', 'created_at', 'updated_at', 'total_amount']
     ordering = ['-order_date']
     inlines = [OrderItemInline]
     
     fieldsets = (
         ('Order Information', {
-            'fields': ('customer', 'status', 'order_date')
-        }),
-        ('Shipping', {
-            'fields': ('shipping_address', 'notes')
+            'fields': ('customer', 'order_date')
         }),
         ('System Information', {
-            'fields': ('id', 'created_at', 'updated_at'),
+            'fields': ('id', 'created_at', 'updated_at', 'total_amount'),
             'classes': ('collapse',)
         }),
     )
@@ -77,10 +71,10 @@ class OrderAdmin(admin.ModelAdmin):
 
 @admin.register(OrderItem)
 class OrderItemAdmin(admin.ModelAdmin):
-    list_display = ['order', 'product', 'quantity', 'unit_price', 'subtotal']
-    list_filter = ['order__status', 'order__order_date']
+    list_display = ['order', 'product', 'quantity', 'unit_price']
+    list_filter = ['order__order_date']
     search_fields = ['order__id', 'product__name']
-    readonly_fields = ['id', 'subtotal']
+    readonly_fields = ['id']
     ordering = ['-order__order_date']
     
     fieldsets = (
