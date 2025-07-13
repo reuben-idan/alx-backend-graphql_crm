@@ -17,7 +17,9 @@ def log_crm_heartbeat():
     
     # Log to the specified file (append mode)
     try:
-        with open('/tmp/crm_heartbeat_log.txt', 'a') as f:
+        log_file = 'C:/temp/crm_heartbeat_log.txt' if os.name == 'nt' else '/tmp/crm_heartbeat_log.txt'
+        os.makedirs(os.path.dirname(log_file), exist_ok=True)
+        with open(log_file, 'a') as f:
             f.write(heartbeat_message)
     except Exception as e:
         print(f"Error writing to heartbeat log: {e}")
@@ -55,13 +57,15 @@ def log_crm_heartbeat():
         
         # Log successful GraphQL query
         graphql_status = f"{timestamp} GraphQL endpoint responsive: {result.get('hello', 'Unknown response')}\n"
-        with open('/tmp/crm_heartbeat_log.txt', 'a') as f:
+        log_file = 'C:/temp/crm_heartbeat_log.txt' if os.name == 'nt' else '/tmp/crm_heartbeat_log.txt'
+        with open(log_file, 'a') as f:
             f.write(graphql_status)
             
     except Exception as e:
         # Log GraphQL query failure
         graphql_error = f"{timestamp} GraphQL endpoint check failed: {str(e)}\n"
-        with open('/tmp/crm_heartbeat_log.txt', 'a') as f:
+        log_file = 'C:/temp/crm_heartbeat_log.txt' if os.name == 'nt' else '/tmp/crm_heartbeat_log.txt'
+        with open(log_file, 'a') as f:
             f.write(graphql_error)
 
 
@@ -119,7 +123,9 @@ def update_low_stock():
         updated_products = mutation_result.get('updatedProducts', [])
         
         # Log the results
-        with open('/tmp/low_stock_updates_log.txt', 'a') as f:
+        log_file = 'C:/temp/low_stock_updates_log.txt' if os.name == 'nt' else '/tmp/low_stock_updates_log.txt'
+        os.makedirs(os.path.dirname(log_file), exist_ok=True)
+        with open(log_file, 'a') as f:
             f.write(f"\n{timestamp}: Low stock update process started\n")
             f.write(f"{timestamp}: Success: {success}\n")
             f.write(f"{timestamp}: Message: {message}\n")
@@ -136,6 +142,8 @@ def update_low_stock():
                 
     except Exception as e:
         # Log error
+        log_file = 'C:/temp/low_stock_updates_log.txt' if os.name == 'nt' else '/tmp/low_stock_updates_log.txt'
+        os.makedirs(os.path.dirname(log_file), exist_ok=True)
         error_message = f"{timestamp}: Error updating low stock products: {str(e)}\n"
-        with open('/tmp/low_stock_updates_log.txt', 'a') as f:
+        with open(log_file, 'a') as f:
             f.write(error_message) 
