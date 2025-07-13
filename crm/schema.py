@@ -128,6 +128,12 @@ class CreateOrderPayload(graphene.ObjectType):
     message = graphene.String()
 
 
+class UpdateLowStockProductsPayload(graphene.ObjectType):
+    updated_products = graphene.List(ProductType)
+    success = graphene.Boolean()
+    message = graphene.String()
+
+
 # Mutations
 class CreateCustomer(graphene.Mutation):
     class Arguments:
@@ -337,6 +343,42 @@ class CreateOrder(graphene.Mutation):
             )
 
 
+class UpdateLowStockProducts(graphene.Mutation):
+    Output = UpdateLowStockProductsPayload
+    
+    def mutate(self, info):
+        try:
+            # Query products with stock < 10
+            low_stock_products = Product.objects.filter(stock__lt=10)
+            
+            if not low_stock_products.exists():
+                return UpdateLowStockProductsPayload(
+                    updated_products=[],
+                    success=True,
+                    message="No low stock products found"
+                )
+            
+            # Increment stock by 10 for each low stock product
+            updated_products = []
+            for product in low_stock_products:
+                product.stock += 10
+                product.save()
+                updated_products.append(product)
+            
+            return UpdateLowStockProductsPayload(
+                updated_products=updated_products,
+                success=True,
+                message=f"Successfully updated {len(updated_products)} low stock products"
+            )
+            
+        except Exception as e:
+            return UpdateLowStockProductsPayload(
+                updated_products=[],
+                success=False,
+                message=f"Error updating low stock products: {str(e)}"
+            )
+
+
 # Query Class
 class Query(graphene.ObjectType):
     # Basic queries
@@ -474,4 +516,5 @@ class Mutation(graphene.ObjectType):
     create_customer = CreateCustomer.Field()
     bulk_create_customers = BulkCreateCustomers.Field()
     create_product = CreateProduct.Field()
-    create_order = CreateOrder.Field() 
+    create_order = CreateOrder.Field()
+    update_low_stock_products = UpdateLowStockProducts.Field() 

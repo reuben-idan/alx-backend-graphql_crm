@@ -62,4 +62,80 @@ def log_crm_heartbeat():
         # Log GraphQL query failure
         graphql_error = f"{timestamp} GraphQL endpoint check failed: {str(e)}\n"
         with open('/tmp/crm_heartbeat_log.txt', 'a') as f:
-            f.write(graphql_error) 
+            f.write(graphql_error)
+
+
+def update_low_stock():
+    """
+    Execute the UpdateLowStockProducts mutation via GraphQL endpoint.
+    Log updated product names and new stock levels.
+    """
+    # Get current timestamp
+    timestamp = datetime.now().strftime("%d/%m/%Y-%H:%M:%S")
+    
+    try:
+        # Setup Django environment if needed
+        if 'DJANGO_SETTINGS_MODULE' not in os.environ:
+            # Add the project directory to Python path
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            project_dir = os.path.dirname(script_dir)
+            sys.path.insert(0, project_dir)
+            
+            # Set Django settings
+            os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'crm_project.settings')
+            
+            # Import Django after setting up the environment
+            import django
+            django.setup()
+        
+        # GraphQL endpoint
+        GRAPHQL_ENDPOINT = "http://localhost:8000/graphql"
+        
+        # GraphQL mutation to update low stock products
+        UPDATE_LOW_STOCK_MUTATION = gql("""
+            mutation {
+                updateLowStockProducts {
+                    success
+                    message
+                    updatedProducts {
+                        id
+                        name
+                        stock
+                        price
+                    }
+                }
+            }
+        """)
+        
+        # Create GraphQL client and execute mutation
+        transport = RequestsHTTPTransport(url=GRAPHQL_ENDPOINT)
+        client = Client(transport=transport, fetch_schema_from_transport=True)
+        result = client.execute(UPDATE_LOW_STOCK_MUTATION)
+        
+        # Extract results
+        mutation_result = result.get('updateLowStockProducts', {})
+        success = mutation_result.get('success', False)
+        message = mutation_result.get('message', 'Unknown response')
+        updated_products = mutation_result.get('updatedProducts', [])
+        
+        # Log the results
+        with open('/tmp/low_stock_updates_log.txt', 'a') as f:
+            f.write(f"\n{timestamp}: Low stock update process started\n")
+            f.write(f"{timestamp}: Success: {success}\n")
+            f.write(f"{timestamp}: Message: {message}\n")
+            
+            if updated_products:
+                f.write(f"{timestamp}: Updated products:\n")
+                for product in updated_products:
+                    product_name = product.get('name', 'Unknown')
+                    new_stock = product.get('stock', 0)
+                    product_id = product.get('id', 'Unknown')
+                    f.write(f"{timestamp}: - Product: {product_name} (ID: {product_id}) - New Stock: {new_stock}\n")
+            else:
+                f.write(f"{timestamp}: No products were updated\n")
+                
+    except Exception as e:
+        # Log error
+        error_message = f"{timestamp}: Error updating low stock products: {str(e)}\n"
+        with open('/tmp/low_stock_updates_log.txt', 'a') as f:
+            f.write(error_message) 
