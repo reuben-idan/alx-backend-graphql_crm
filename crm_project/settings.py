@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'graphene_django',
     'django_filters',
     'corsheaders',
+    'django_crontab',
     
     # Local apps
     'crm',
@@ -174,4 +175,9 @@ LOGGING = {
 }
 
 # Create logs directory if it doesn't exist
-os.makedirs(BASE_DIR / 'logs', exist_ok=True) 
+os.makedirs(BASE_DIR / 'logs', exist_ok=True)
+
+# Django Crontab Configuration
+CRONJOBS = [
+    ('*/5 * * * *', 'crm.cron.log_crm_heartbeat'),
+] 
