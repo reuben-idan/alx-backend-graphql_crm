@@ -1,4 +1,4 @@
-Django==5.2.3
+Django==4.2.11
 graphene-django==3.1.5
 django-filter==23.5
 django-cors-headers==4.3.1
