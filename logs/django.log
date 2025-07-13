@@ -174,3 +174,5 @@ INFO 2025-07-13 21:17:07,338 basehttp 20884 1972 "GET /static/graphene_django/gr
 INFO 2025-07-13 21:17:09,115 basehttp 20884 1972 "POST /graphql HTTP/1.1" 200 58918
 WARNING 2025-07-13 21:17:11,181 log 20884 1972 Not Found: /favicon.ico
 WARNING 2025-07-13 21:17:11,182 basehttp 20884 1972 "GET /favicon.ico HTTP/1.1" 404 2475
+INFO 2025-07-13 21:37:53,516 autoreload 20884 18024 C:\Users\reube\alx-backend-graphql_crm\crm\__init__.py changed, reloading.
+INFO 2025-07-13 21:37:59,435 autoreload 11812 8672 Watching for file changes with StatReloader
