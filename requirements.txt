@@ -12,4 +12,6 @@ django-celery-results==2.5.1
 coverage==7.3.2
 pytest==7.4.3
 pytest-django==4.7.0
-factory-boy==3.3.0 
+factory-boy==3.3.0
+gql==3.4.1
+requests==2.31.0 
